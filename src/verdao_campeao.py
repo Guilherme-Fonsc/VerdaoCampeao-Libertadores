@@ -2,11 +2,33 @@
 
 # Esse é um script com fins pedagógicos
 
+#%% Premissas e limitações do modelo
+# - Projeto didático (primeiro projeto em Python); não é um modelo preditivo validado.
+# - Amostra pequena: 12 jogos por time e 3 vs. 1 disputas de pênaltis.
+# - Tempo regular: P(vitória) = média entre a taxa de vitória própria e a taxa de derrota do rival.
+# - A final é jogo único: a prorrogação não é modelada (empate nos 90 min vai direto aos pênaltis).
+# - Fator de experiência nos pênaltis (80% qualidade / 20% volume) é uma premissa arbitrária:
+#   o título do Palmeiras varia de ~50,4% (peso 0%) a ~53,0% (peso 30%) conforme esse peso.
+# - Teste de Fisher: p alto indica ausência de evidência de diferença, não prova de igualdade.
+# - A taxa de empates no mata-mata não é a probabilidade de ir aos pênaltis
+#   (os pênaltis dependem do empate no agregado de cada confronto).
+
+#%% Caminhos do projeto (relativos à raiz do repositório)
+from pathlib import Path
+try:
+    RAIZ = Path(__file__).resolve().parent.parent
+except NameError:  # executando célula ou notebook
+    RAIZ = Path.cwd()
+    if RAIZ.name in ("src", "notebooks"):
+        RAIZ = RAIZ.parent
+ARQUIVO_DADOS = RAIZ / "data" / "Base de dados Geral.xlsx"
+PASTA_ASSETS = RAIZ / "assets"
+
 #%% Métodos e Dados
 # Vamos utilizar o número de Vitórias, Empates e Derrotas de ambos os times
 # A final será entre Palmeiras e Estudiantes
 # Tentaremos gerar um modelo funcional de validação desses dados
-# Para tal, organisaremos os dados ultilizando a Base de dados geral
+# Para tal, organizaremos os dados utilizando a Base de dados geral
 # Qual eu coletei através de pesquisas em sites sobre estatísticas de futebol
 # Calcularemos o seguinte: 
 # Taxas de sucesso direto comum e ajustada
@@ -65,10 +87,10 @@ historico_estudiantes = {
     "volta": {"vitorias": 2, "derrotas": 0, "empates": 1}
 }
 #%% Importando a base de dados diretamente do arquivo:
-Dados_Fase_de_Grupos = pd.read_excel("Base de dados Geral.xlsx", sheet_name="Fase de Grupos", header=1)
-Dados_Mata_Mata_Ida = pd.read_excel("Base de dados Geral.xlsx", sheet_name="Mata-Mata Ida", header=1)
-Dados_Mata_Mata_Volta = pd.read_excel("Base de dados Geral.xlsx", sheet_name="Mata-Mata Volta", header=1)
-Estatísticas_Pênaltis = pd.read_excel("Base de dados Geral.xlsx", sheet_name="Pênaltis")
+Dados_Fase_de_Grupos = pd.read_excel(ARQUIVO_DADOS, sheet_name="Fase de Grupos", header=1)
+Dados_Mata_Mata_Ida = pd.read_excel(ARQUIVO_DADOS, sheet_name="Mata-Mata Ida", header=1)
+Dados_Mata_Mata_Volta = pd.read_excel(ARQUIVO_DADOS, sheet_name="Mata-Mata Volta", header=1)
+Estatísticas_Pênaltis = pd.read_excel(ARQUIVO_DADOS, sheet_name="Pênaltis")
 #%% O método .str.strip() varre os nomes das colunas e remove automaticamente qualquer espaço em branco oculto nas pontas
 Dados_Mata_Mata_Ida.columns = Dados_Mata_Mata_Ida.columns.str.strip()
 Dados_Mata_Mata_Volta.columns = Dados_Mata_Mata_Volta.columns.str.strip()
@@ -120,10 +142,10 @@ empates_estudiantes_mata_mata = Dados_Mata_Mata_Ida.loc[Dados_Mata_Mata_Ida["Tim
 total_jogos_estudiantes_mata_mata = Dados_Mata_Mata_Ida.loc[Dados_Mata_Mata_Ida["Times"] == "Estudiantes", "Total de Jogos"].values[0] + Dados_Mata_Mata_Volta.loc[Dados_Mata_Mata_Volta["Times"] == "Estudiantes", "Total de Jogos"].values[0]
 #%% Calculando a probabilidade de empate (pênaltis) para o Palmeiras
 probabilidade_penaltis_palmeiras = (empates_palmeiras_mata_mata / total_jogos_palmeiras_mata_mata) * 100
-print(f"Probabilidade de Pênaltis (Palmeiras): {probabilidade_penaltis_palmeiras:.2f}%")
+print(f"Taxa de empates no mata-mata (Palmeiras): {probabilidade_penaltis_palmeiras:.2f}%")
 #%% Calculando a probabilidade de empate (pênaltis) para o Estudiantes
 probabilidade_penaltis_estudiantes = (empates_estudiantes_mata_mata / total_jogos_estudiantes_mata_mata) * 100
-print(f"Probabilidade de Pênaltis (Estudiantes): {probabilidade_penaltis_estudiantes:.2f}%")
+print(f"Taxa de empates no mata-mata (Estudiantes): {probabilidade_penaltis_estudiantes:.2f}%")
 #%% 1. Extraindo os resultados do Palmeiras na Fase de Grupos
 vitorias_grupos_palmeiras = Dados_Fase_de_Grupos.loc[Dados_Fase_de_Grupos["Times"] == "Palmeiras", "Vitórias"].values[0]
 derrotas_grupos_palmeiras = Dados_Fase_de_Grupos.loc[Dados_Fase_de_Grupos["Times"] == "Palmeiras", "Derrotas"].values[0]
@@ -327,7 +349,7 @@ for barra in b1 + b2:
 
 # --- GRÁFICO 2: Mata-Mata (Sucesso Direto Bruto vs. Ajustado & Risco Pênaltis) ---
 ax2 = axs[0, 1]
-cat_mm = ['Sucesso Direto\n(Bruto)', 'Sucesso Direto\n(Ajustado Bayes)', 'Prob. Pênaltis\n(Empates MM)']
+cat_mm = ['Sucesso Direto\n(Bruto)', 'Sucesso Direto\n(Ajustado Bayes)', 'Taxa de empates\n(Mata-Mata)']
 val_pal_mm = [sucesso_direto_palmeiras, sucesso_direto_ajustado_palmeiras, probabilidade_penaltis_palmeiras]
 val_est_mm = [sucesso_direto_estudiantes, sucesso_direto_ajustado_estudiantes, probabilidade_penaltis_estudiantes]
 
@@ -486,12 +508,20 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
 # Função de segurança caso os arquivos .png ainda não estejam na pasta
 def carregar_ou_criar_escudo(caminho_arquivo, clube):
-    if os.path.exists(caminho_arquivo):
+    if Path(caminho_arquivo).exists():
         return mpimg.imread(caminho_arquivo), True
-    
+    # Sem o PNG: desenha um círculo na cor do clube
+    cor = {'palmeiras': (0.0, 0.39, 0.22, 1.0), 'estudiantes': (0.83, 0.18, 0.18, 1.0)}.get(clube, (0.5, 0.5, 0.5, 1.0))
+    n = 200
+    yy, xx = np.ogrid[:n, :n]
+    mascara = ((xx - n / 2) ** 2 + (yy - n / 2) ** 2) <= (n / 2) ** 2
+    img = np.zeros((n, n, 4))
+    img[mascara] = cor
+    return img, False
+
 # Carregando as imagens dos escudos
-img_pal, usando_png_pal = carregar_ou_criar_escudo('escudo_palmeiras.png', 'palmeiras')
-img_est, usando_png_est = carregar_ou_criar_escudo('escudo_estudiantes.png', 'estudiantes')
+img_pal, usando_png_pal = carregar_ou_criar_escudo(PASTA_ASSETS / 'escudo_palmeiras.png', 'palmeiras')
+img_est, usando_png_est = carregar_ou_criar_escudo(PASTA_ASSETS / 'escudo_estudiantes.png', 'estudiantes')
 
 # Dados finais do Modelo Analítico Determinístico
 valores = [prob_titulo_pal, prob_titulo_est]
@@ -552,5 +582,5 @@ ax.set_title('Probabilidade Final de Título — Modelo Analítico Determinísti
 ax.axis('equal')
 
 plt.tight_layout()
-plt.savefig('grafico_pizza_campeao.png', dpi=300, bbox_inches='tight')
+plt.savefig(PASTA_ASSETS / 'grafico_pizza_campeao.png', dpi=300, bbox_inches='tight')
 plt.show()
