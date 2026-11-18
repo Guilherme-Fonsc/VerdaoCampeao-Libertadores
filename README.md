@@ -60,9 +60,9 @@ Como estou aprendendo, sugeri erroneamente um teste de Correlação de Pearson (
 ---
 
 ## ⚠️ 5. Limitações
-- **Modelo didático e não validado:** nenhuma etapa foi testada contra resultados reais.
+- **Modelo didático e não validado:** nenhuma etapa foi testada contra resultados reais, é meu primeiro projeto, tentei construir algo com base nos meus estudos.
 - **Amostras pequenas:** 12 jogos por time e 3 vs. 1 disputas de pênaltis.
-- **Fator de experiência (80/20) é uma premissa arbitrária:** sem ele, o título do Palmeiras fica em ~50,4%; com peso de 30%, em ~53,0%. Praticamente toda a vantagem do Palmeiras vem desse termo, já que nos 90 minutos os times saem iguais.
+- **Fator de experiência (80/20) é uma premissa arbitrária:** decidi que precisava equilibrar a disparidade de amostra, se tratando de futebol, frequência e consistência quase sempre são recompensadas. Mas é uma via de mão dupla, sem ele, o título do Palmeiras fica em ~50,4%; com peso de 30%, em ~53,0%. Praticamente toda a vantagem do Palmeiras vem desse termo, já que nos 90 minutos os times saem iguais.
 - **Final em jogo único:** a prorrogação não é modelada (empate nos 90 min vai direto aos pênaltis).
 - **"Taxa de empates no mata-mata"** não é a probabilidade de ir aos pênaltis: eles dependem do empate no agregado de cada confronto.
 - **Testes de Fisher** com tabelas minúsculas têm pouquíssimo poder; p alto não prova equilíbrio.
